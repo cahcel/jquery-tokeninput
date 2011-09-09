@@ -34,6 +34,7 @@ var DEFAULT_SETTINGS = {
     theme: null,
     resultsFormatter: function(item){ return "<li>" + item[this.propertyToSearch]+ "</li>" },
     tokenFormatter: function(item) { return "<li><p>" + item[this.propertyToSearch] + "</p></li>" },
+    inputWaterMark : "Multi-Select",
 
     // Tokenization settings
     tokenLimit: null,
@@ -63,7 +64,8 @@ var DEFAULT_CLASSES = {
     dropdownItem: "token-input-dropdown-item",
     dropdownItem2: "token-input-dropdown-item2",
     selectedDropdownItem: "token-input-selected-dropdown-item",
-    inputToken: "token-input-input-token"
+    inputToken: "token-input-input-token",
+    inputWaterMark : "token-input-watermark"
 };
 
 // Input box position "enum"
@@ -188,15 +190,24 @@ $.TokenList = function (input, url_or_data, settings) {
         .css({
             outline: "none"
         })
+        .addClass(settings.classes.inputWaterMark)
+        .val(settings.inputWaterMark)
         .attr("id", settings.idPrefix + input.id)
         .focus(function () {
-            if (settings.tokenLimit === null || settings.tokenLimit !== token_count) {
+            $(this).removeClass(settings.classes.inputWaterMark).val("");
+            if(settings.showDropDownOnFocus == true){
+                setTimeout(function(){do_search();}, 5);
+            } else if (settings.tokenLimit === null || settings.tokenLimit !== token_count) {
                 show_dropdown_hint();
             }
         })
         .blur(function () {
             hide_dropdown();
-            $(this).val("");
+            if(token_count == 0){
+              $(this).addClass(settings.classes.inputWaterMark).val(settings.inputWaterMark)
+            }else {
+                $(this).val("");
+            }
         })
         .bind("keyup keydown blur update", resize_input)
         .keydown(function (event) {
