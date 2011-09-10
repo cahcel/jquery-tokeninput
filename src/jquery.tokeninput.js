@@ -17,6 +17,7 @@ var DEFAULT_SETTINGS = {
     searchDelay: 300,
     minChars: 1,
     propertyToSearch: "name",
+    propertyId: "id",
     jsonContainer: null,
     contentType: "json",
 
@@ -46,6 +47,7 @@ var DEFAULT_SETTINGS = {
     onAdd: null,
     onDelete: null,
     onReady: null,
+    parameterCallback : null,
 
     // Other settings
     idPrefix: "token-input-"
@@ -469,7 +471,8 @@ $.TokenList = function (input, url_or_data, settings) {
             });
 
         // Store data on the token
-        var token_data = {"id": item.id};
+        var token_data = {};
+        token_data[settings.propertyId] = item[settings.propertyId];
         token_data[settings.propertyToSearch] = item[settings.propertyToSearch];
         $.data(this_token.get(0), "tokeninput", item);
 
@@ -501,7 +504,7 @@ $.TokenList = function (input, url_or_data, settings) {
             token_list.children().each(function () {
                 var existing_token = $(this);
                 var existing_data = $.data(existing_token.get(0), "tokeninput");
-                if(existing_data && existing_data.id === item.id) {
+                if(existing_data && existing_data[settings.propertyId] == item[settings.propertyId]) {
                     found_existing_token = existing_token;
                     return false;
                 }
@@ -799,24 +802,12 @@ $.TokenList = function (input, url_or_data, settings) {
             // Are we doing an ajax search or local data search?
             if(settings.url) {
                 var url = computeURL();
-                // Extract exisiting get params
                 var ajax_params = {};
-                ajax_params.data = {};
-                if(url.indexOf("?") > -1) {
-                    var parts = url.split("?");
-                    ajax_params.url = parts[0];
-
-                    var param_array = parts[1].split("&");
-                    $.each(param_array, function (index, value) {
-                        var kv = value.split("=");
-                        ajax_params.data[kv[0]] = kv[1];
-                    });
-                } else {
-                    ajax_params.url = url;
-                }
-
-                // Prepare the request
-                ajax_params.data[settings.queryParam] = query;
+                ajax_params.url = url;
+                //hack to get params to set correctly -fix this later
+                //ajax_params.data = settings.queryParam + '=' + query + '&' + parts[1];
+                var queryString = settings.queryParam + '=' + query;
+                ajax_params.data = settings.parameterCallback.call(hidden_input, queryString);
                 ajax_params.type = settings.method;
                 ajax_params.dataType = settings.contentType;
                 if(settings.crossDomain) {
