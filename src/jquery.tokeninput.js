@@ -194,7 +194,7 @@ $.TokenList = function (input, url_or_data, settings) {
         .focus(function () {
             $(this).removeClass(settings.classes.inputWaterMark).val("");
             if(settings.showDropDownOnFocus == true){
-                setTimeout(function(){do_search();}, 5);
+                populate_dropdown(null,settings.local_data);
             } else if (settings.tokenLimit === null || settings.tokenLimit !== token_count) {
                 show_dropdown_hint();
             }
@@ -215,40 +215,38 @@ $.TokenList = function (input, url_or_data, settings) {
             switch(event.keyCode) {
                 case KEY.LEFT:
                 case KEY.RIGHT:
+                    previous_token = input_token.prev();
+                    next_token = input_token.next();
+
+                    if((previous_token.length && previous_token.get(0) === selected_token) || (next_token.length && next_token.get(0) === selected_token)) {
+                        // Check if there is a previous/next token and it is selected
+                        if(event.keyCode === KEY.LEFT) {
+                            deselect_token($(selected_token), POSITION.BEFORE);
+                        } else {
+                            deselect_token($(selected_token), POSITION.AFTER);
+                        }
+                    } else if((event.keyCode === KEY.LEFT) && previous_token.length) {
+                        // We are moving left, select the previous token if it exists
+                        select_token($(previous_token.get(0)));
+                    } else if((event.keyCode === KEY.RIGHT) && next_token.length) {
+                        // We are moving right, select the next token if it exists
+                        select_token($(next_token.get(0)));
+                    }
+                    break;
                 case KEY.UP:
                 case KEY.DOWN:
-                    if(!$(this).val()) {
-                        previous_token = input_token.prev();
-                        next_token = input_token.next();
+                    var dropdown_item = null;
 
-                        if((previous_token.length && previous_token.get(0) === selected_token) || (next_token.length && next_token.get(0) === selected_token)) {
-                            // Check if there is a previous/next token and it is selected
-                            if(event.keyCode === KEY.LEFT || event.keyCode === KEY.UP) {
-                                deselect_token($(selected_token), POSITION.BEFORE);
-                            } else {
-                                deselect_token($(selected_token), POSITION.AFTER);
-                            }
-                        } else if((event.keyCode === KEY.LEFT || event.keyCode === KEY.UP) && previous_token.length) {
-                            // We are moving left, select the previous token if it exists
-                            select_token($(previous_token.get(0)));
-                        } else if((event.keyCode === KEY.RIGHT || event.keyCode === KEY.DOWN) && next_token.length) {
-                            // We are moving right, select the next token if it exists
-                            select_token($(next_token.get(0)));
-                        }
+                    if(event.keyCode === KEY.DOWN ) {
+                        dropdown_item = $(selected_dropdown_item).next();
                     } else {
-                        var dropdown_item = null;
-
-                        if(event.keyCode === KEY.DOWN || event.keyCode === KEY.RIGHT) {
-                            dropdown_item = $(selected_dropdown_item).next();
-                        } else {
-                            dropdown_item = $(selected_dropdown_item).prev();
-                        }
-
-                        if(dropdown_item.length) {
-                            select_dropdown_item(dropdown_item);
-                        }
-                        return false;
+                        dropdown_item = $(selected_dropdown_item).prev();
                     }
+
+                    if(dropdown_item.length) {
+                        select_dropdown_item(dropdown_item);
+                    }
+                    //return false;
                     break;
 
                 case KEY.BACKSPACE:
@@ -527,7 +525,11 @@ $.TokenList = function (input, url_or_data, settings) {
         input_box.val("");
 
         // Don't show the help dropdown, they've got the idea
-        hide_dropdown();
+        if(settings.showDropDownOnFocus){
+            populate_dropdown(null, settings.local_data);
+        } else {
+            hide_dropdown();
+        }
 
         // Execute the onAdd callback if defined
         if($.isFunction(callback)) {
@@ -595,12 +597,13 @@ $.TokenList = function (input, url_or_data, settings) {
         token.remove();
         selected_token = null;
 
-        // Show the input box and give it focus again
-        input_box.focus();
 
         // Remove this token from the saved list
         saved_tokens = saved_tokens.slice(0,index).concat(saved_tokens.slice(index+1));
         if(index < selected_token_index) selected_token_index--;
+
+        // Show the input box and give it focus again
+        input_box.focus();
 
         // Update the hidden input
         update_hidden_input(saved_tokens, hidden_input);
@@ -625,7 +628,7 @@ $.TokenList = function (input, url_or_data, settings) {
         var token_values = $.map(saved_tokens, function (el) {
             return el[settings.tokenValue];
         });
-        hidden_input.val(token_values.join(settings.tokenDelimiter));
+        hidden_input.val(JSON.stringify(saved_tokens));
 
     }
 
@@ -690,9 +693,9 @@ $.TokenList = function (input, url_or_data, settings) {
                 if(!settings.preventDuplicates || !isSelected(value[settings.propertyToSearch])){
 
                     var this_li = settings.resultsFormatter(value);
-
-                    this_li = find_value_and_highlight_term(this_li ,value[settings.propertyToSearch], query);
-
+                    if(query){
+                        this_li = find_value_and_highlight_term(this_li ,value[settings.propertyToSearch], query);
+                    }
                     this_li = $(this_li).appendTo(dropdown_ul);
 
                     if(index % 2) {
