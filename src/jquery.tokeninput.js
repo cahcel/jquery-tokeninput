@@ -35,6 +35,7 @@ var DEFAULT_SETTINGS = {
     resultsFormatter: function(item){ return "<li>" + item[this.propertyToSearch]+ "</li>" },
     tokenFormatter: function(item) { return "<li><p>" + item[this.propertyToSearch] + "</p></li>" },
     inputWaterMark : "Multi-Select",
+    showDropDownOnFocus : false,
 
     // Tokenization settings
     tokenLimit: null,
@@ -306,6 +307,8 @@ $.TokenList = function (input, url_or_data, settings) {
                                input_box.blur();
                            });
 
+    var hidden_input_name = $(input).attr("name");
+
     // Keep a reference to the selected token and dropdown item
     var selected_token = null;
     var selected_token_index = 0;
@@ -481,7 +484,8 @@ $.TokenList = function (input, url_or_data, settings) {
         selected_token_index++;
 
         // Update the hidden input
-        update_hidden_input(saved_tokens, hidden_input);
+        //update_hidden_input(saved_tokens, hidden_input);
+        add_hidden_input(item, hidden_input);
 
         token_count += 1;
 
@@ -609,7 +613,8 @@ $.TokenList = function (input, url_or_data, settings) {
         input_box.focus();
 
         // Update the hidden input
-        update_hidden_input(saved_tokens, hidden_input);
+        //update_hidden_input(saved_tokens, hidden_input);
+         delete_hidden_input(token_data, hidden_input);
 
         token_count -= 1;
 
@@ -626,12 +631,23 @@ $.TokenList = function (input, url_or_data, settings) {
         }
     }
 
+    function delete_hidden_input(item, hidden_input){
+        var input_id = '#' + hidden_input_name + item[settings.propertyId];
+        $(input_id).remove();
+
+    }
+
+    function add_hidden_input(item, hidden_input){
+        var new_input = "<input id=\"" + hidden_input_name + item[settings.propertyId] + "\" name=\"" + hidden_input_name + "_array\"" + " value=\"" + item[settings.tokenValue] + "\"/>";
+        hidden_input.after(new_input);
+    }
+
     // Update the hidden input box value
     function update_hidden_input(saved_tokens, hidden_input) {
         var token_values = $.map(saved_tokens, function (el) {
             return el[settings.tokenValue];
         });
-        hidden_input.val(JSON.stringify(saved_tokens));
+        hidden_input.val(token_values.join(settings.tokenDelimiter));
 
     }
 
