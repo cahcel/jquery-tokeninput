@@ -203,11 +203,6 @@ $.TokenList = function (input, url_or_data, settings) {
         })
         .blur(function () {
             hide_dropdown();
-            if(token_count == 0){
-              $(this).addClass(settings.classes.inputWaterMark).val(settings.inputWaterMark)
-            }else {
-                $(this).val("");
-            }
         })
         .bind("keyup keydown blur update", resize_input)
         .keydown(function (event) {
@@ -216,21 +211,21 @@ $.TokenList = function (input, url_or_data, settings) {
 
             switch(event.keyCode) {
                 case KEY.LEFT:
-                case KEY.RIGHT:
                     previous_token = input_token.prev();
+                    if(previous_token.length && previous_token.get(0) === selected_token) {
+                        deselect_token($(selected_token), POSITION.BEFORE);
+                    } else if(previous_token.length) {
+                        // select the previous token if it exists
+                        select_token($(previous_token.get(0)));
+                    }
+                    break;
+                case KEY.RIGHT:
                     next_token = input_token.next();
 
-                    if((previous_token.length && previous_token.get(0) === selected_token) || (next_token.length && next_token.get(0) === selected_token)) {
-                        // Check if there is a previous/next token and it is selected
-                        if(event.keyCode === KEY.LEFT) {
-                            deselect_token($(selected_token), POSITION.BEFORE);
-                        } else {
-                            deselect_token($(selected_token), POSITION.AFTER);
-                        }
-                    } else if((event.keyCode === KEY.LEFT) && previous_token.length) {
-                        // We are moving left, select the previous token if it exists
-                        select_token($(previous_token.get(0)));
-                    } else if((event.keyCode === KEY.RIGHT) && next_token.length) {
+                    if(next_token.length && next_token.get(0) === selected_token) {
+                        // Check if there is a next token and it is selected
+                        deselect_token($(selected_token), POSITION.AFTER);
+                    } else if(next_token.length) {
                         // We are moving right, select the next token if it exists
                         select_token($(next_token.get(0)));
                     }
@@ -271,10 +266,8 @@ $.TokenList = function (input, url_or_data, settings) {
                     }
                     break;
 
-                case KEY.TAB:
                 case KEY.ENTER:
                 case KEY.NUMPAD_ENTER:
-                case KEY.COMMA:
                   if(selected_dropdown_item) {
                     add_token($(selected_dropdown_item).data("tokeninput"));
                     hidden_input.change();
@@ -283,8 +276,8 @@ $.TokenList = function (input, url_or_data, settings) {
                   break;
 
                 case KEY.ESCAPE:
-                  hide_dropdown();
-                  return true;
+                  $(this).blur();
+                  break;
 
                 default:
                     if(String.fromCharCode(event.which)) {
@@ -637,6 +630,11 @@ $.TokenList = function (input, url_or_data, settings) {
 
     // Hide and clear the results dropdown
     function hide_dropdown () {
+        if(token_count == 0){
+          input_box.addClass(settings.classes.inputWaterMark).val(settings.inputWaterMark);
+        }else {
+            input_box.val("");
+        }
         dropdown.hide().empty();
         selected_dropdown_item = null;
     }
