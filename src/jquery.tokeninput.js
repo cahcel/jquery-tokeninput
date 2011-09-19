@@ -345,9 +345,12 @@ $.TokenList = function (input, url_or_data, settings) {
         .append(input_box);
 
     // The list to store the dropdown items in
+    var dropdown_parent = $("<div>")
+        .insertAfter(token_list)
+        .css({position: 'relative'});
     var dropdown = $("<div>")
         .addClass(settings.classes.dropdown)
-        .appendTo("body")
+        .appendTo(dropdown_parent)
         .hide();
 
     // Magic element to help us resize the text input
@@ -372,8 +375,13 @@ $.TokenList = function (input, url_or_data, settings) {
         li_data = settings.onResult.call(hidden_input, li_data);
     }
     if(li_data && li_data.length) {
+        input_box.removeClass(settings.classes.inputWaterMark).val("");
         $.each(li_data, function (index, value) {
-            insert_token(value);
+            if(typeof value === 'object'){
+                insert_token(value);
+             } else if(typeof value === 'string'){
+                  insert_token(getItemById(value));
+             }
             checkTokenLimit();
         });
     }
@@ -477,7 +485,7 @@ $.TokenList = function (input, url_or_data, settings) {
         selected_token_index++;
 
         // Update the hidden input
-        //update_hidden_input(saved_tokens, hidden_input);
+        update_hidden_input(saved_tokens, hidden_input);
         add_hidden_input(item, hidden_input);
 
         token_count += 1;
@@ -606,8 +614,8 @@ $.TokenList = function (input, url_or_data, settings) {
         input_box.focus();
 
         // Update the hidden input
-        //update_hidden_input(saved_tokens, hidden_input);
-         delete_hidden_input(token_data, hidden_input);
+        update_hidden_input(saved_tokens, hidden_input);
+        delete_hidden_input(token_data, hidden_input);
 
         token_count -= 1;
 
@@ -625,13 +633,14 @@ $.TokenList = function (input, url_or_data, settings) {
     }
 
     function delete_hidden_input(item, hidden_input){
-        var input_id = '#' + hidden_input_name + item[settings.propertyId];
+        var input_id = ('#' + hidden_input_name + item[settings.propertyId]).replace(/ /g,"_");
         $(input_id).remove();
 
     }
 
     function add_hidden_input(item, hidden_input){
-        var new_input = "<input id=\"" + hidden_input_name + item[settings.propertyId] + "\" name=\"" + hidden_input_name + "_array\"" + " value=\"" + item[settings.tokenValue] + "\"/>";
+        var input_id = (hidden_input_name + item[settings.propertyId]).replace(/ /g,"_");
+        var new_input = "<input type=\"hidden\" id=\"" + input_id + "\" name=\"" + hidden_input_name + "_array\"" + " value=\"" + item[settings.tokenValue] + "\"/>";
         hidden_input.after(new_input);
     }
 
@@ -659,8 +668,9 @@ $.TokenList = function (input, url_or_data, settings) {
         dropdown
             .css({
                 position: "absolute",
-                top: $(token_list).offset().top + $(token_list).outerHeight(),
-                left: $(token_list).offset().left,
+                top: 0,
+                left: 0,
+                width: token_list.width(),
                 'z-index': 999
             })
             .show();
@@ -763,6 +773,16 @@ $.TokenList = function (input, url_or_data, settings) {
             }
         });
         return itemSelected;
+    }
+
+    function getItemById(id) {
+        var _item = null;
+        $.each(settings.local_data, function(index, value){
+            if(value[settings.propertyId] == id){
+                return _item = value;
+            }
+        });
+        return _item;
     }
 
     // Highlight an item in the results dropdown
