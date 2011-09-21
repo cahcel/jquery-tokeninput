@@ -647,7 +647,7 @@ $.TokenList = function (input, url_or_data, settings) {
     // Update the hidden input box value
     function update_hidden_input(saved_tokens, hidden_input) {
         var token_values = $.map(saved_tokens, function (el) {
-            return el[settings.tokenValue];
+            return el[settings.propertyToSearch];
         });
         hidden_input.val(token_values.join(settings.tokenDelimiter));
 
@@ -778,7 +778,7 @@ $.TokenList = function (input, url_or_data, settings) {
     function getItemById(id) {
         var _item = null;
         $.each(settings.local_data, function(index, value){
-            if(value[settings.propertyId] == id){
+            if(value[settings.tokenValue] == id){
                 return _item = value;
             }
         });
